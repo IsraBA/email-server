@@ -30,6 +30,20 @@ async function updateReadChat(userId, chatId) {
     return "chat marked as read"
 }
 
+async function updateChat(userId, chatId, update = [String, Boolean]) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let flag = Flags[update[0]];
+    if (!flag) throw { code: 404, msg: 'flag not found' };
+
+    let chat = user.chats.find(c => c._id == chatId)
+    chat[flag] = update[1];
+
+    await users.save(user);
+    return "chat updated"
+}
+
 let exampleData = {
     subject: "third try",
     messages: [{
@@ -73,7 +87,7 @@ async function createNewChat(userId, data) {
             $push: {
                 chats: {
                     chat: newChat._id,
-                    isRead: memberId == userId,
+                    isRead: memberId == userId && data.members.length != 1,
                     isInbox: 
                         memberId != userId || 
                         (memberId == userId && data.members.length == 1)
@@ -135,5 +149,6 @@ module.exports = {
     createNewChat,
     deleteChat,
     deleteChatForever,
-    addMsgToChat
+    addMsgToChat,
+    updateChat,
 }

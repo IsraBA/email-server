@@ -57,12 +57,57 @@ router.put('/markAsRead/:chatId', async (req, res) => {
     }
 })
 
+// סימון הצ'ט כלא נקרא
+router.put('/markAsUnread/:chatId', async (req, res) => {
+    try {
+        const chat = await service.updateChat(req.user._id, req.params.chatId, ["read", false]);
+        res.send(chat);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// הוספת הצ'ט למועדפים
+router.put('/addToFavorite/:chatId', async (req, res) => {
+    try {
+        const chat = await service.updateChat(req.user._id, req.params.chatId, ["favorite", true]);
+        res.send(chat);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// הסרת הצ'ט למועדפים
+router.put('/removeFromFavorite/:chatId', async (req, res) => {
+    try {
+        const chat = await service.updateChat(req.user._id, req.params.chatId, ["favorite", false]);
+        res.send(chat);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
 // מחיקת צ'ט והעברתו למחוקים
 router.put('/deleteChat/:chatId', async (req, res) => {
     try {
         const chat = await service.deleteChat(req.user._id, req.params.chatId);
         res.send(chat);
     } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// שחזור צ'ט
+router.put('/restoreChat/:chatId', async (req, res) => {
+    try {
+        const chat = await service.updateChat(req.user._id, req.params.chatId, ["deleted", false]);
+        res.send(chat);
+    } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })
