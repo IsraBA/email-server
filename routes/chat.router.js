@@ -17,12 +17,33 @@ router.get('/:flag', async (req, res) => {
     }
 })
 
+// קבלת כמות צ'אטים שלא נקראו בכל תיבה
+router.get('/unreadCount/unreadObj', async (req, res) => {
+    try {
+        const unreadObj = await service.getUnreadChats(req.user._id);
+        res.send(unreadObj);
+    } catch (error) {
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
 // קבלת צ'ט יחיד
 router.get('/singleChat/:id', async (req, res) => {
     try {
         const chat = await service.getSingleChat(req.user._id, req.params.id);
         res.send(chat);
     } catch (error) {
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// קבלת צ'טים על פי חיפוש
+router.get('/:box/search/:input', async (req, res) => {
+    try {
+        const chat = await service.getChatsBySearch(req.user._id, req.params.box, req.params.input);
+        res.send(chat);
+    } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })

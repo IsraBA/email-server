@@ -1,3 +1,4 @@
+const { mongo } = require('mongoose');
 const userModel = require('../models/user.model');
 
 const getUsers = async (filter = {}, proj) => {
@@ -46,5 +47,19 @@ const createUser = async (data) => {
 const deleteUser = async (id) => {
     return await userModel.findByIdAndUpdate({ _id: id }, { isActive: false });
 };
+
+// const searchChat = async (chats ,input) => {
+//     console.log('chats: ', chats)
+//     const regex = new RegExp(input, 'i'); // 'i' for case-insensitive search
+//     const results = await chats.find({
+//         $or: [
+//             { 'chat.subject': { $regex: regex } },
+//             { 'chat.members.userName': { $regex: regex } },
+//             { 'chat.messages.content': { $regex: regex } }
+//         ]
+//     });
+//     return results;
+// };
+
 
 module.exports = { getUsers, getUser, updateUser, createUser, deleteUser, readByFlags, save };

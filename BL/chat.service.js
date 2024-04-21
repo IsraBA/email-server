@@ -1,6 +1,7 @@
 const { Flags } = require('../utility');
 const users = require('../DL/controllers/user.controller');
 const chats = require('../DL/controllers/chat.controller');
+const htmlToPlainText = require('../function/htmlToText');
 
 // קבלת הצ'אטים של המשתמש על פי קטגוריה
 async function getChatsByFilter(userId, filter) {
@@ -88,8 +89,8 @@ async function createNewChat(userId, data) {
                 chats: {
                     chat: newChat._id,
                     isRead: memberId == userId && data.members.length != 1,
-                    isInbox: 
-                        memberId != userId || 
+                    isInbox:
+                        memberId != userId ||
                         (memberId == userId && data.members.length == 1)
                     ,
                     isSent: memberId == userId,
@@ -114,7 +115,7 @@ async function emailToId(email) {
 
 async function addMsgToChat(chatId, newMsg) {
     let chat = await chats.getChat({ _id: chatId });
-    console.log('chat: ', chat)
+    // console.log('chat: ', chat)
     if (!chat) throw { code: 404, msg: 'chat not found' };
 
     let updateChat = [...chat.messages, newMsg];
@@ -142,6 +143,49 @@ async function deleteChatForever(userId, chatId) {
     return chat;
 };
 
+// קבלת כמות ההודעות שלא נקראו בכל תיבה
+async function getUnreadChats(userId) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let unReadObj = {
+        inbox: 0,
+        favorite: 0,
+        deleted: 0
+        // sent: 0,
+    }
+    let unreadChats = user.chats.filter(c => !c.isRead);
+    unreadChats.forEach(c => {
+        if (c.isDeleted) {
+            unReadObj.deleted++;
+            return;
+        };
+        if (c.isInbox) unReadObj.inbox++;
+        if (c.isFavorite) unReadObj.favorite++;
+        // if (c.isSent) unReadObj.sent++;
+    });
+    return unReadObj;
+};
+
+// קבלת צ'אטים על פי חיפוש
+async function getChatsBySearch(userId, box, input) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let chats = await getChatsByFilter(userId, box);
+
+    // מעבר על כל הצ'אטים מהחינת הנושא, המשתתפים ותוכן ההודעות וחיפוש אם כוללים משהו
+    let result = chats.filter(c => {
+        let chatName = c.chat.subject.toLowerCase();
+        let chatMembers = c.chat.members.map(m => m.userName.toLowerCase());
+        let chatMessages = c.chat.messages.map(m => htmlToPlainText(m.content).toLowerCase());
+        return chatName.includes(input.toLowerCase()) ||
+            chatMembers.some(m => m.includes(input.toLowerCase())) ||
+            chatMessages.some(m => m.includes(input.toLowerCase()));
+    })
+    return result;
+};
+
 module.exports = {
     getChatsByFilter,
     getSingleChat,
@@ -151,4 +195,6 @@ module.exports = {
     deleteChatForever,
     addMsgToChat,
     updateChat,
+    getUnreadChats,
+    getChatsBySearch
 }
