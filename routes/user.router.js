@@ -15,4 +15,15 @@ router.get('/emails/:chars', async (req, res) => {
     }
 })
 
+// קבלת כל התגיות הקיימות של היוזר
+router.get('/getAllLabels', async (req, res) => {
+    try {
+        const allLabels = await service.getAllLabels(req.user._id);
+        res.send(allLabels);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
 module.exports = router;

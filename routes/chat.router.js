@@ -111,6 +111,17 @@ router.put('/removeFromFavorite/:chatId', async (req, res) => {
     }
 })
 
+// הוספת תגית לצ'ט
+router.post('/addLabel/:chatId', async (req, res) => {
+    try {
+        const labels = await service.addLabelToChat(req.user._id, req.params.chatId, req.body);
+        res.send(labels);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
 // מחיקת צ'ט והעברתו למחוקים
 router.put('/deleteChat/:chatId', async (req, res) => {
     try {

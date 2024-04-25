@@ -5,4 +5,23 @@ async function offerEmails(emailStartsWith = '') {
     return emails;
 }
 
-module.exports = { offerEmails }
+// קבלת כל התגיות הקיימות של היוזר
+async function getAllLabels(userId) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let uniqueLabels = {};
+    user.chats.forEach(chat => {
+        chat.labels.forEach(label => {
+            if (!uniqueLabels[label.title]) {
+                uniqueLabels[label.title] = { color: label.color, title: label.title };
+            }
+        });
+    });
+
+    let allLabels = Object.values(uniqueLabels);
+
+    return allLabels;
+}
+
+module.exports = { offerEmails, getAllLabels }

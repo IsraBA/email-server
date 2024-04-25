@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
         labels: [{
             color: {
                 type: String,
-                default: "#00000000",
+                default: "#0000000",
             },
             title: {
                 type: String,

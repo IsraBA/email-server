@@ -45,6 +45,19 @@ async function updateChat(userId, chatId, update = [String, Boolean]) {
     return "chat updated"
 }
 
+// הופסת תגית לצ'אט
+async function addLabelToChat(userId, chatId, label) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let chat = user.chats.find(c => c._id == chatId);
+
+    chat.labels = chat.labels.includes(label) ? chat.labels : [...chat.labels, label];
+
+    await users.save(user);
+    return chat.labels;
+}
+
 let exampleData = {
     subject: "third try",
     messages: [{
@@ -196,5 +209,6 @@ module.exports = {
     addMsgToChat,
     updateChat,
     getUnreadChats,
-    getChatsBySearch
+    getChatsBySearch,
+    addLabelToChat,
 }
