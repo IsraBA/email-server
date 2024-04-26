@@ -122,6 +122,21 @@ router.post('/addLabel/:chatId', async (req, res) => {
     }
 })
 
+// הסרת תגית מצ'ט
+router.delete('/removeLabel/:chatId/:labelTitle', async (req, res) => {
+    try {
+        const labels = await service.removeLabelFromChat(
+            req.user._id,
+            req.params.chatId,
+            req.params.labelTitle
+        );
+        res.send(labels);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
 // מחיקת צ'ט והעברתו למחוקים
 router.put('/deleteChat/:chatId', async (req, res) => {
     try {

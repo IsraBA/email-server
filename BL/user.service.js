@@ -10,18 +10,19 @@ async function getAllLabels(userId) {
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
 
-    let uniqueLabels = {};
-    user.chats.forEach(chat => {
-        chat.labels.forEach(label => {
-            if (!uniqueLabels[label.title]) {
-                uniqueLabels[label.title] = { color: label.color, title: label.title };
-            }
-        });
-    });
+    // let uniqueLabels = {};
+    // user.chats.forEach(chat => {
+    //     chat.labels.forEach(label => {
+    //         if (!uniqueLabels[label.title]) {
+    //             uniqueLabels[label.title] = { color: label.color, title: label.title };
+    //         }
+    //     });
+    // });
 
-    let allLabels = Object.values(uniqueLabels);
+    // let allLabels = Object.values(uniqueLabels);
 
-    return allLabels;
+    // return allLabels;
+    return user.labels;
 }
 
 module.exports = { offerEmails, getAllLabels }

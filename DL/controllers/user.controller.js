@@ -7,6 +7,7 @@ const getUsers = async (filter = {}, proj) => {
 
 const getUser = async (filter = {}) => {
     let data = await userModel.findOne({ ...filter, isActive: true })
+    .populate({ path: 'chats.labels', model: 'label' });
     return data;
 }
 

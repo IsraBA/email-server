@@ -45,14 +45,57 @@ async function updateChat(userId, chatId, update = [String, Boolean]) {
     return "chat updated"
 }
 
-// הופסת תגית לצ'אט
+// הוספת תגית לצ'אט
 async function addLabelToChat(userId, chatId, label) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    // בדיקה אם התווית קיימת במערך התוויות
+    let existingLabel = user.labels.find(l => l.title === label.title);
+    let labelId;
+
+    if (existingLabel) {
+        labelId = existingLabel._id;
+    } else {
+        // אם לא קיים מוסיף אותה למערך התוויות
+        user.labels.push(label);
+        await users.save(user);
+        labelId = user.labels.find(l => l.title === label.title)?._id;
+    }
+
+    // מוסיף את האי-די שלה למערך התוויות של הצ'אט המבוקש
+    let chat = user.chats.find(c => c._id.toString() === chatId);
+    if (!chat) throw { code: 404, msg: 'chat not found' };
+
+    // אם התווית לא קיימת המערך התוויות של הצ'אט מוסיף אותה
+    if (!chat.labels.includes(labelId)) {
+        chat.labels.push(labelId);
+        await users.save(user);
+    }
+    console.log("labelId: ", labelId)
+    
+    user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    chat = user.chats.find(c => c._id.toString() === chatId);
+    
+    console.log("chat: ", chat)
+
+    return chat.labels;
+
+}
+
+// addLabelToChat("66168d588eea0054ac8a279c", "66204f9cfe7492419792ad46", { color: "#000000", title: "test6" })
+//     .catch(console.log)
+
+// הסרת תגית מצ'אט
+async function removeLabelFromChat(userId, chatId, labelTitle) {
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
 
     let chat = user.chats.find(c => c._id == chatId);
 
-    chat.labels = chat.labels.includes(label) ? chat.labels : [...chat.labels, label];
+    chat.labels = chat.labels.filter(l => l.title != labelTitle);
 
     await users.save(user);
     return chat.labels;
@@ -211,4 +254,5 @@ module.exports = {
     getUnreadChats,
     getChatsBySearch,
     addLabelToChat,
+    removeLabelFromChat,
 }

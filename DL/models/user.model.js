@@ -1,6 +1,19 @@
 const mongoose = require('mongoose');
 require('./chat.model')
 
+const labelSchema = new mongoose.Schema({
+    color: {
+        type: String,
+        default: "#000000",
+    },
+    title: {
+        type: String,
+        unique: true,
+    },
+});
+
+const labelModel = mongoose.model('label', labelSchema);
+
 const userSchema = new mongoose.Schema({
     userName: {
         type: String,
@@ -17,6 +30,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     image: String,
+    labels: [labelSchema],
     chats: [{
         chat: {
             type: mongoose.SchemaTypes.ObjectId,
@@ -32,14 +46,8 @@ const userSchema = new mongoose.Schema({
         isDraft: Boolean,
         isDeleted: Boolean,
         labels: [{
-            color: {
-                type: String,
-                default: "#0000000",
-            },
-            title: {
-                type: String,
-                unique: true,
-            },
+            type: mongoose.SchemaTypes.ObjectId,
+            ref: "label",
         }]
     }],
     isActive: {
