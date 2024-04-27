@@ -5,9 +5,12 @@ const getUsers = async (filter = {}, proj) => {
     return await userModel.find({ ...filter, isActive: true }, proj);
 }
 
-const getUser = async (filter = {}) => {
-    let data = await userModel.findOne({ ...filter, isActive: true })
-    .populate({ path: 'chats.labels', model: 'label' });
+const getUser = async (filter = {}, selectPassword = false) => {
+    let query = userModel.findOne({ ...filter, isActive: true });
+    if (selectPassword) {
+        query = query.select('+password');
+    }
+    let data = await query.exec();
     return data;
 }
 

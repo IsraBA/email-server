@@ -85,7 +85,7 @@ async function addLabelToChat(userId, chatId, label) {
 
 }
 
-// addLabelToChat("66168d588eea0054ac8a279c", "66204f9cfe7492419792ad46", { color: "#000000", title: "test6" })
+// addLabelToChat("66168d588eea0054ac8a279c", "66204f9cfe7492419792ad46", { color: "#000000", title: "test8" })
 //     .catch(console.log)
 
 // הסרת תגית מצ'אט

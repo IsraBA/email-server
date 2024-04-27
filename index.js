@@ -9,6 +9,12 @@ const cors = require('cors');
 app.use(cors());
 app.use(express.json());
 
+const { register } = require('./middlewares/register')
+app.post('/register', register)
+
+const { login } = require('./middlewares/login')
+app.post('/login', login)
+
 const { auth } = require('./middlewares/auth')
 app.all('*', auth)
 
