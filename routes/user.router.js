@@ -26,4 +26,37 @@ router.get('/getAllLabels', async (req, res) => {
     }
 })
 
+// הוספת תווית ליוזר
+router.post('/addLabelToUser', async (req, res) => {
+    try {
+        const labels = await service.addLabelToUser(req.user._id, req.body);
+        res.send(labels);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// מחיקת תווית ליוזר
+router.delete('/deleteLabelFromUser/:labelTitle', async (req, res) => {
+    try {
+        const labels = await service.deleteLabelFromUser(req.user._id, req.params.labelTitle);
+        res.send(labels);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// שינוי שם תווית ליוזר
+router.put('/changeLabelName', async (req, res) => {
+    try {
+        const labels = await service.changeLabelName(req.user._id, req.body);
+        res.send(labels);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
 module.exports = router;

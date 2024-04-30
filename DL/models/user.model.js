@@ -45,10 +45,7 @@ const userSchema = new mongoose.Schema({
         isFavorite: Boolean,
         isDraft: Boolean,
         isDeleted: Boolean,
-        labels: [{
-            type: mongoose.SchemaTypes.ObjectId,
-            ref: "label",
-        }]
+        labels: [String]
     }],
     isActive: {
         type: Boolean,

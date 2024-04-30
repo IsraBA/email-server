@@ -9,20 +9,74 @@ async function offerEmails(emailStartsWith = '') {
 async function getAllLabels(userId) {
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
-
-    // let uniqueLabels = {};
-    // user.chats.forEach(chat => {
-    //     chat.labels.forEach(label => {
-    //         if (!uniqueLabels[label.title]) {
-    //             uniqueLabels[label.title] = { color: label.color, title: label.title };
-    //         }
-    //     });
-    // });
-
-    // let allLabels = Object.values(uniqueLabels);
-
-    // return allLabels;
     return user.labels;
 }
 
-module.exports = { offerEmails, getAllLabels }
+// הוספת תווית ליוזר
+async function addLabelToUser(userId, label) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    // בדיקה אם התווית קיימת במערך התוויות
+    let existingLabel = user.labels.find(l => l.title === label.title);
+
+    if (existingLabel) {
+        return user.labels;
+    } else {
+        // אם לא קיים מוסיף אותה למערך התוויות
+        user.labels.push(label);
+        await users.save(user);
+    }
+
+    user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    return user.labels;
+}
+
+// מחיקת תווית מיוזר
+async function deleteLabelFromUser(userId, labelTitle) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    // מחיקת התווית ממערך התוויות הראשי
+    user.labels = user.labels.filter(l => l.title != labelTitle);
+
+    // מחיקת התווית מכל מערך תוויות פנימי של כל צ'אט
+    user.chats.forEach(chat => {
+        chat.labels = chat.labels.filter(l => l != labelTitle);
+    });
+
+    // עדכון הדטאבייס
+    await users.save(user);
+
+    return user.labels;
+}
+
+// שינוי שם תווית ביוזר
+async function changeLabelName(userId, updatedLabel) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    // עדכון התווית במערך התוויות הראשי
+    let label = user.labels.find(l => l._id == updatedLabel._id);
+    if (!label) throw { code: 404, msg: 'label not found' };
+
+    // עדכון כל מערכי התוויות הפנימיים שמכילים את התווית בשם החדש שלה
+    user.chats.forEach(chat => {
+        chat.labels = chat.labels.map(l => l == label.title ? updatedLabel.title : l);
+    });
+
+    // עדכון התווית במערך הראשי
+    label.title = updatedLabel.title;
+    if (updatedLabel.color) {
+        label.color = updatedLabel.color;
+    }
+
+    // עדכון הדטאבייס
+    await users.save(user);
+
+    return user.labels;
+}
+
+module.exports = { offerEmails, getAllLabels, addLabelToUser, deleteLabelFromUser, changeLabelName }

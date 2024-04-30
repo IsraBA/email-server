@@ -13,6 +13,18 @@ router.get('/:flag', async (req, res) => {
         const chats = await service.getChatsByFilter(req.user._id, req.params.flag);
         res.send(chats);
     } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// קבלת צ'אטים על פי תגית
+router.get('/label/:labelTitle', async (req, res) => {
+    try {
+        const chats = await service.getChatsByLabel(req.user._id, req.params.labelTitle);
+        res.send(chats);
+    } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })
@@ -61,7 +73,7 @@ router.post('/', upload.any(), async (req, res) => {
 // שליחת הודעה בצ'ט קיים
 router.put('/:chatId', async (req, res) => {
     try {
-        const chat = await service.addMsgToChat(req.params.chatId, req.body);
+        const chat = await service.addMsgToChat(req.user._id, req.params.chatId, req.body);
         res.send(chat);
     } catch (error) {
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
@@ -111,10 +123,14 @@ router.put('/removeFromFavorite/:chatId', async (req, res) => {
     }
 })
 
-// הוספת תגית לצ'ט
-router.post('/addLabel/:chatId', async (req, res) => {
+// הוספת תווית לצ'ט
+router.post('/addLabel/:chatId/:labelTitle', async (req, res) => {
     try {
-        const labels = await service.addLabelToChat(req.user._id, req.params.chatId, req.body);
+        const labels = await service.addLabelToChat(
+            req.user._id,
+            req.params.chatId,
+            req.params.labelTitle
+        );
         res.send(labels);
     } catch (error) {
         console.log(error)
@@ -122,7 +138,7 @@ router.post('/addLabel/:chatId', async (req, res) => {
     }
 })
 
-// הסרת תגית מצ'ט
+// הסרת תווית מצ'ט
 router.delete('/removeLabel/:chatId/:labelTitle', async (req, res) => {
     try {
         const labels = await service.removeLabelFromChat(

@@ -40,6 +40,16 @@ async function readByFlags(id, flags = [], populate = {}) {
     return data.toObject()
 }
 
+async function readByLabel(id, labelTitle) {
+    let data = await userModel.findOne({ _id: id, isActive: true });
+    data.chats = data.chats.filter(chat => chat.labels.includes(labelTitle));
+    data = await data.populate('chats.chat')
+    data = await data.populate({ path: 'chats.chat.members', select: "userName image" })
+
+    return data.toObject()
+}
+
+
 const updateUser = async (id, data) => {
     return await userModel.findByIdAndUpdate(id, data);
 };
@@ -66,4 +76,13 @@ const deleteUser = async (id) => {
 // };
 
 
-module.exports = { getUsers, getUser, updateUser, createUser, deleteUser, readByFlags, save };
+module.exports = {
+    getUsers,
+    getUser,
+    updateUser,
+    createUser,
+    deleteUser,
+    readByFlags,
+    save,
+    readByLabel
+};

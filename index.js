@@ -10,13 +10,16 @@ app.use(cors());
 app.use(express.json());
 
 const { register } = require('./middlewares/register')
-app.post('/register', register)
+app.post('/register', register);
 
 const { login } = require('./middlewares/login')
-app.post('/login', login)
+app.post('/login', login);
+
+const tokenToUser = require('./middlewares/tokenToUser')
+app.get('/getUserWithToken', tokenToUser);
 
 const { auth } = require('./middlewares/auth')
-app.all('*', auth)
+app.all('*', auth);
 
 const chatRouter = require('./routes/chat.router');
 app.use('/chat', chatRouter);

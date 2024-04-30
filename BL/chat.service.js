@@ -6,7 +6,21 @@ const htmlToPlainText = require('../function/htmlToText');
 // קבלת הצ'אטים של המשתמש על פי קטגוריה
 async function getChatsByFilter(userId, filter) {
     if (!Flags[filter]) throw { code: 404, msg: 'box not found' };
-    const { chats } = await users.readByFlags(userId, [Flags[filter]], { chats: true, users: true });
+    let { chats } = await users.readByFlags(userId, [Flags[filter]], { chats: true, users: true });
+
+    // סידור הצ'אטים על פי התאריך שלהם
+    chats.sort((a, b) => new Date(b.chat.lastDate) - new Date(a.chat.lastDate));
+
+    return chats;
+}
+
+// קבלת הצ'אטים על פי תווית
+async function getChatsByLabel(userId, labelTitle) {
+    let { chats } = await users.readByLabel(userId, labelTitle);
+
+    // סידור הצ'אטים על פי התאריך שלהם
+    chats.sort((a, b) => new Date(b.chat.lastDate) - new Date(a.chat.lastDate));
+
     return chats;
 }
 
@@ -45,85 +59,47 @@ async function updateChat(userId, chatId, update = [String, Boolean]) {
     return "chat updated"
 }
 
-// הוספת תגית לצ'אט
-async function addLabelToChat(userId, chatId, label) {
+// הוספת תווית לצ'אט
+async function addLabelToChat(userId, chatId, labelTitle) {
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
-
-    // בדיקה אם התווית קיימת במערך התוויות
-    let existingLabel = user.labels.find(l => l.title === label.title);
-    let labelId;
-
-    if (existingLabel) {
-        labelId = existingLabel._id;
-    } else {
-        // אם לא קיים מוסיף אותה למערך התוויות
-        user.labels.push(label);
-        await users.save(user);
-        labelId = user.labels.find(l => l.title === label.title)?._id;
-    }
 
     // מוסיף את האי-די שלה למערך התוויות של הצ'אט המבוקש
     let chat = user.chats.find(c => c._id.toString() === chatId);
     if (!chat) throw { code: 404, msg: 'chat not found' };
 
-    // אם התווית לא קיימת המערך התוויות של הצ'אט מוסיף אותה
-    if (!chat.labels.includes(labelId)) {
-        chat.labels.push(labelId);
+    // אם התווית לא קיימת במערך התוויות של הצ'אט מוסיף אותה
+    if (!chat.labels.includes(labelTitle)) {
+        chat.labels.push(labelTitle);
         await users.save(user);
     }
-    console.log("labelId: ", labelId)
+   
+    chat = await getSingleChat(userId, chatId)
     
-    user = await users.getUser({ _id: userId });
-    if (!user) throw { code: 404, msg: 'user not found' };
-
-    chat = user.chats.find(c => c._id.toString() === chatId);
-    
-    console.log("chat: ", chat)
-
+    // החזרת מערך התגיות המעודכן
     return chat.labels;
-
 }
 
-// addLabelToChat("66168d588eea0054ac8a279c", "66204f9cfe7492419792ad46", { color: "#000000", title: "test8" })
-//     .catch(console.log)
-
-// הסרת תגית מצ'אט
+// הסרת תווית מצ'אט
 async function removeLabelFromChat(userId, chatId, labelTitle) {
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
 
     let chat = user.chats.find(c => c._id == chatId);
 
-    chat.labels = chat.labels.filter(l => l.title != labelTitle);
+    chat.labels = chat.labels.filter(label => label != labelTitle);
 
     await users.save(user);
+
+    // החזרת מערך התגיות המעודכן
     return chat.labels;
 }
 
-let exampleData = {
-    subject: "third try",
-    messages: [{
-        date: "2024-04-10T10:24:00.000Z",
-        content: "Hello, how are you? This is the message from the channel",
-        from: "66128823d5cbfbbc8fa1ab14"
-    }],
-    lastDate: "2024-03-21T10:24:00.000Z",
-    members: [
-        "user2@example.com",
-        "user1@example.com",
-        "user3@example.com",
-        "user4@example.com",
-    ]
-}
-
-// createNewChat('66128823d5cbfbbc8fa1ab14', exampleData)
-
 async function createNewChat(userId, data) {
-
+    
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
-
+    
     // סינון מיילים כפולים במידה ושלח גם לעצמו
     data.members = JSON.parse(data.members);
     data.members = Array.from(new Set(data.members.map(JSON.stringify))).map(JSON.parse);
@@ -169,14 +145,30 @@ async function emailToId(email) {
     return user._id;
 };
 
-async function addMsgToChat(chatId, newMsg) {
+async function addMsgToChat(sender, chatId, newMsg) {
     let chat = await chats.getChat({ _id: chatId });
-    // console.log('chat: ', chat)
+    console.log('chat: ', chat)
     if (!chat) throw { code: 404, msg: 'chat not found' };
 
     let updateChat = [...chat.messages, newMsg];
 
-    await chats.updateChat(chatId, { messages: updateChat, lastDate: newMsg.date })
+    await chats.updateChat(chatId, { messages: updateChat, lastDate: newMsg.date });
+
+    // עידכון כל המשתתפים בשיחה שהצ'ט יהיה בתיבת האינבוקס ולא נקרא
+    let userIds = chat.members.map(m => m._id);
+    userIds.forEach(async userId => {
+        let user = await users.getUser({ _id: userId });
+        if (!user) throw { code: 404, msg: 'One of the users not found' };
+
+        let userChat = user.chats.find(c => c.chat == chatId);
+        if (!userChat) throw { code: 404, msg: 'The chat not found' };
+
+        if (userId != sender) {
+            userChat.isRead = false;
+            userChat.isInbox = true;
+            users.save(user);
+        }
+    })
 
     return chat;
 }
@@ -255,4 +247,5 @@ module.exports = {
     getChatsBySearch,
     addLabelToChat,
     removeLabelFromChat,
+    getChatsByLabel
 }
