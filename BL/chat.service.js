@@ -73,9 +73,9 @@ async function addLabelToChat(userId, chatId, labelTitle) {
         chat.labels.push(labelTitle);
         await users.save(user);
     }
-   
+
     chat = await getSingleChat(userId, chatId)
-    
+
     // החזרת מערך התגיות המעודכן
     return chat.labels;
 }
@@ -95,11 +95,13 @@ async function removeLabelFromChat(userId, chatId, labelTitle) {
     return chat.labels;
 }
 
+// התחלת צ'ט חדש
 async function createNewChat(userId, data) {
-    
+    // console.log('data', data)
+
     let user = await users.getUser({ _id: userId });
     if (!user) throw { code: 404, msg: 'user not found' };
-    
+
     // סינון מיילים כפולים במידה ושלח גם לעצמו
     data.members = JSON.parse(data.members);
     data.members = Array.from(new Set(data.members.map(JSON.stringify))).map(JSON.parse);
@@ -139,6 +141,132 @@ async function createNewChat(userId, data) {
     return newChat;
 }
 
+// יצירת טיוטה חדשה
+async function createNewDraft(userId, data) {
+    // console.log('data: ', data)
+
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    // סינון מיילים כפולים במידה ושלח גם לעצמו
+    data.members = JSON.parse(data.members);
+    data.members = Array.from(new Set(data.members.map(JSON.stringify))).map(JSON.parse);
+
+    // יצירת מערך אי די במקום מערך האימיילים
+    data.members = await Promise.all(data.members.map(email => emailToId(email)));
+
+    data.messages = JSON.parse(data.messages);
+
+    let newChat = await chats.createChat(data);
+
+    // הוספת הצ'ט החדש לצ'אטים של היוזר אבל במצב טיוטה
+    await users.updateUser({ _id: userId }, {
+        $push: {
+            chats: {
+                chat: newChat._id,
+                isRead: true,
+                isInbox: false,
+                isSent: false,
+                isFavorite: false,
+                isDraft: true,
+                isDeleted: false,
+                labels: []
+            }
+        }
+    })
+
+    user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let drafts = user.chats.filter(c => c.isDraft);
+
+    console.log("updated successfully")
+    return drafts;
+}
+
+// עדכון טיוטה (שליחה שלה/עדכון שלה)
+async function updateDraft(userId, chatId, sent = Boolean, data) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let chat = user.chats.find(c => c._id == chatId);
+    if (!chat) throw { code: 404, msg: 'chat not found' };
+
+    // סינון מיילים כפולים במידה ושלח גם לעצמו
+    data.members = JSON.parse(data.members);
+    data.members = Array.from(new Set(data.members.map(JSON.stringify))).map(JSON.parse);
+
+    // יצירת מערך אי די במקום מערך האימיילים
+    data.members = await Promise.all(data.members.map(email => emailToId(email)));
+
+    data.messages = JSON.parse(data.messages);
+
+    // console.log("sorted data: ", data)
+
+    let chatToUpdate = await chats.getChat({ _id: chat.chat });
+    if (!chatToUpdate) throw { code: 404, msg: 'chat not found' };
+
+    chatToUpdate.subject = data.subject;
+    chatToUpdate.messages = data.messages;
+    chatToUpdate.lastDate = data.lastDate;
+    chatToUpdate.members = data.members;
+
+    await chats.save(chatToUpdate);
+
+    // במידה ושלח את הטיוטה
+    if (sent) {
+        // עדכון של כל המשתתפים בשיחה בשיחה החדשה
+        data.members.forEach(async memberId => {
+            if (memberId == userId) {
+                chat.isDraft = false;
+                chat.isSent = true;
+                chat.isInbox = memberId != userId || (memberId == userId && data.members.length == 1);
+                chat.isRead = memberId == userId && data.members.length != 1;
+                await user.save(user)
+            } else {
+                await users.updateUser({ _id: memberId }, {
+                    $push: {
+                        chats: {
+                            chat: chat.chat,
+                            isRead: memberId == userId && data.members.length != 1,
+                            isInbox:
+                                memberId != userId ||
+                                (memberId == userId && data.members.length == 1)
+                            ,
+                            isSent: memberId == userId,
+                            isFavorite: false,
+                            isDraft: false,
+                            isDeleted: false,
+                            labels: []
+                        }
+                    }
+                })
+            }
+        })
+        return "sent successfully";
+    }
+    // במידה ורק שינה את התוכן של הטיוטה
+    else {
+        return "updated successfully";
+    }
+};
+
+// מחיקת טיוטה
+async function deleteDraft(userId, chatId) {
+    let user = await users.getUser({ _id: userId });
+    if (!user) throw { code: 404, msg: 'user not found' };
+
+    let chat = user.chats.find(c => c._id == chatId);
+    if (!chat) throw { code: 404, msg: 'chat not found' };
+
+    await chats.deleteChat(chat.chat);
+
+    user.chats = user.chats.filter(c => c._id != chatId);
+    await user.save(user);
+    
+    return "deleted successfully";
+}
+
 async function emailToId(email) {
     let user = await users.getUser({ email: email.email })
     if (!user) throw { code: 404, msg: 'user not found' };
@@ -147,7 +275,7 @@ async function emailToId(email) {
 
 async function addMsgToChat(sender, chatId, newMsg) {
     let chat = await chats.getChat({ _id: chatId });
-    console.log('chat: ', chat)
+    // console.log('chat: ', chat)
     if (!chat) throw { code: 404, msg: 'chat not found' };
 
     let updateChat = [...chat.messages, newMsg];
@@ -247,5 +375,8 @@ module.exports = {
     getChatsBySearch,
     addLabelToChat,
     removeLabelFromChat,
-    getChatsByLabel
+    getChatsByLabel,
+    createNewDraft,
+    updateDraft,
+    deleteDraft
 }

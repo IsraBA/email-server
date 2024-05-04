@@ -35,7 +35,7 @@ async function readByFlags(id, flags = [], populate = {}) {
         }
     }))
     if (populate.chats) data = await data.populate('chats.chat')
-    if (populate.users) data = await data.populate({ path: 'chats.chat.members', select: "userName image" })
+    if (populate.users) data = await data.populate({ path: 'chats.chat.members', select: "userName image email" })
 
     return data.toObject()
 }

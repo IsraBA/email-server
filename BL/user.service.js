@@ -79,4 +79,10 @@ async function changeLabelName(userId, updatedLabel) {
     return user.labels;
 }
 
-module.exports = { offerEmails, getAllLabels, addLabelToUser, deleteLabelFromUser, changeLabelName }
+module.exports = {
+    offerEmails,
+    getAllLabels,
+    addLabelToUser,
+    deleteLabelFromUser,
+    changeLabelName,
+}

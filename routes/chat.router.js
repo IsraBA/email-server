@@ -66,6 +66,7 @@ router.post('/', upload.any(), async (req, res) => {
         const newChat = await service.createNewChat(req.user._id, req.body);
         res.send(newChat);
     } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })
@@ -76,6 +77,7 @@ router.put('/:chatId', async (req, res) => {
         const chat = await service.addMsgToChat(req.user._id, req.params.chatId, req.body);
         res.send(chat);
     } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })
@@ -86,6 +88,7 @@ router.put('/markAsRead/:chatId', async (req, res) => {
         const chat = await service.updateReadChat(req.user._id, req.params.chatId);
         res.send(chat);
     } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })
@@ -181,6 +184,44 @@ router.delete('/:chatId', async (req, res) => {
         const chat = await service.deleteChatForever(req.user._id, req.params.chatId);
         res.send(chat);
     } catch (error) {
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// הוספת הודעה לטיוטות
+router.post('/addDraft', upload.any(), async (req, res) => {
+    try {
+        const drafts = await service.createNewDraft(req.user._id, req.body);
+        res.send(drafts);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// עדכון טיוטה (שליחה שלה/עדכון שלה)
+router.put('/updateDraft/:chatId/:send', upload.any(), async (req, res) => {
+    try {
+        const update = await service.updateDraft(
+            req.user._id,
+            req.params.chatId,
+            JSON.parse(req.params.send),
+            req.body
+        );
+        res.send(update);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+})
+
+// מחיקת טיוטה
+router.delete('/deleteDraft/:chatId', async (req, res) => {
+    try {
+        await service.deleteDraft(req.user._id, req.params.chatId);
+        res.send("deleted successfully");
+    } catch (error) {
+        console.log(error)
         res.status(error?.code || 500).send(error.msg || error || "something went wrong");
     }
 })
