@@ -12,7 +12,7 @@ const labelSchema = new mongoose.Schema({
     },
 });
 
-const labelModel = mongoose.model('label', labelSchema);
+const Label = mongoose.model('label', labelSchema);
 
 const userSchema = new mongoose.Schema({
     userName: {
@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: true,
     }
-})
+});
 
 const userModel = mongoose.model('user', userSchema);
 
