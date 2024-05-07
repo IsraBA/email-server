@@ -21,13 +21,16 @@ const upload = multer({
     },
 });
 
-const { register } = require('./middlewares/register')
+const { register } = require('./Auth/register')
 app.post('/register', upload.single('image'), register);
 
-const { login } = require('./middlewares/login')
+const { login } = require('./Auth/login')
 app.post('/login', login);
 
-const tokenToUser = require('./middlewares/tokenToUser')
+const { googleLogin } = require('./Auth/googleLogin')
+app.post('/googleLogin', googleLogin);
+
+const tokenToUser = require('./Auth/tokenToUser')
 app.get('/getUserWithToken', tokenToUser);
 
 const { auth } = require('./middlewares/auth')
