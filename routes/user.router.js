@@ -59,4 +59,15 @@ router.put('/changeLabelName', async (req, res) => {
     }
 })
 
+// שינוי פרטי היוזר (שם או סיסמה)
+router.put('/changeUserInfo', async (req, res) => {
+    try {
+        const user = await service.changeUserInfo(req.user._id, req.body);
+        res.send(user);
+    } catch (error) {
+        console.log(error)
+        res.status(error?.code || 500).send(error.msg || error || "something went wrong");
+    }
+});
+
 module.exports = router;

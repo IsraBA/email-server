@@ -39,7 +39,6 @@ async function register(req, res) {
 
         // הצפנת הסיסמה
         const hashedPassword = await bcrypt.hash(password, 10);
-        // לשים פה את הקישור מהתמונה שהועלתה
         user = await users.createUser({ userName, email, password: hashedPassword, image });
 
         console.log("new user: ", user)
